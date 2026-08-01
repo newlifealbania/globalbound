@@ -11,13 +11,13 @@ Thanks for partnering with Global Bound, the budgeting app for expats, digital n
 
 ## How you get credit
 
-- You get a **unique referral link** and a **real-time dashboard** (through Lemon Squeezy) showing your clicks, sign-ups, and earnings.
+- You get a **unique referral link** and a **real-time dashboard** (through Lemon Squeezy, our payment platform) showing your clicks, sign-ups, and earnings.
 - For video and social, you can also get a **unique discount code** (for example, a code that gives your audience a small discount and credits the sale to you). Codes work great where people cannot tap a link.
 - **Cookie window: 60 days.** If someone clicks your link and subscribes within 60 days, you get the credit.
 
 ## How and when you get paid
 
-- Payouts are **automatic** through Lemon Squeezy, with a **$10 minimum**.
+- Payouts are **automatic** through Lemon Squeezy.
 - You can see your upcoming and past payouts anytime in your affiliate dashboard.
 - Commissions are held briefly before payout (standard, to account for refunds), then released automatically.
 
