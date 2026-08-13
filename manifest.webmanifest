@@ -1,0 +1,16 @@
+{
+  "name": "Global Bound: Budget & Expense Tracking for Travelers, Nomads & Expats",
+  "short_name": "Global Bound",
+  "description": "Budget and expense tracking for travelers, digital nomads, and expats. Log spending in any currency and always know where your money goes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0E6E6E",
+  "theme_color": "#0E6E6E",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
