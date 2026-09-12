@@ -188,6 +188,7 @@
     <button data-tab="log" onclick="go('log')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Log</button>
     <button data-tab="savings" onclick="go('savings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 21l-5.2 1.9 1-5.8L3.5 9.2l5.9-.9z"/></svg>Savings</button>
     <button data-tab="trips" onclick="go('trips')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>Trips</button>
+    <button data-tab="visa" onclick="go('visa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="9.5" r="2.4"/><path d="M8.4 16c.9-1.7 6.3-1.7 7.2 0"/></svg>Visa</button>
     <button data-tab="summary" onclick="go('summary')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-2M12 12v5"/></svg>Summary</button>
   </nav>
   <div id="installBar" style="display:none;position:fixed;left:12px;right:12px;bottom:80px;z-index:60;background:#0E6E6E;color:#fff;border-radius:14px;padding:11px 14px;box-shadow:0 10px 26px rgba(0,0,0,.28);align-items:center;gap:10px"><div style="flex:1;font-size:13px;font-weight:600;line-height:1.3">📲 Install Global Bound for one-tap access</div><button onclick="doInstall()" style="background:#fff;color:#0E6E6E;border:none;border-radius:9px;padding:7px 13px;font-weight:800;font-size:13px">Install</button><span onclick="dismissInstall()" style="cursor:pointer;font-size:20px;opacity:.85;padding:0 2px">&times;</span></div><div id="iosGuide" style="display:none;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55)" onclick="this.style.display=&#39;none&#39;"><div style="position:absolute;bottom:14px;left:14px;right:14px;background:#fff;color:#1F2937;border-radius:16px;padding:18px" onclick="event.stopPropagation()"><div style="font-weight:800;font-size:16px;margin-bottom:8px">Add Global Bound to your Home Screen</div><div style="font-size:14px;line-height:1.6">1. Tap the <b>Share</b> button (a square with an arrow ↑) in Safari’s bottom bar.<br>2. Scroll down and tap <b>“Add to Home Screen.”</b><br>3. Tap <b>Add</b> — it’ll appear like any other app. ✨</div><button onclick="document.getElementById(&#39;iosGuide&#39;).style.display=&#39;none&#39;" style="margin-top:14px;width:100%;background:#0E6E6E;color:#fff;border:none;border-radius:10px;padding:11px;font-weight:700">Got it</button></div></div>
@@ -241,8 +242,8 @@ const GROUPS=[["fixed","Fixed bills","Auto-repeats every month"],["var","Variabl
 let S={}, sb=null, USER=null, CLOUD=false, saveTimer=null, ratesTimer=null;
 
 function nowMonth(){ return new Date().toISOString().slice(0,7); }
-function defaultState(){ return {home:"USD", month:nowMonth(), rates:Object.assign({},DEFAULT_RATES), liveRates:true, ratesUpdated:0, ratesError:false, cats:JSON.parse(JSON.stringify(DEFAULT_CATS)), trips:[], dark:false, income:{}, recurring:{}, planned:{}, billPaid:{}, expenses:[], goals:[]}; }
-function normalize(s){ s=Object.assign(defaultState(), s||{}); if(!s.home) s.home="USD"; if(!s.month) s.month=nowMonth(); if(!s.rates||!s.rates.USD) s.rates=Object.assign({},DEFAULT_RATES); if(s.liveRates===undefined) s.liveRates=true; if(!s.cats||!s.cats.length)s.cats=JSON.parse(JSON.stringify(DEFAULT_CATS)); if(!s.trips)s.trips=[]; if(!s._accom){if(!s.cats.some(function(c){return c.name==="Hotels & accommodations";})){var _oi=s.cats.findIndex(function(c){return c.name==="Other";});var _ne={name:"Hotels & accommodations",icon:"🏨",group:"var"};if(_oi>=0)s.cats.splice(_oi,0,_ne);else s.cats.push(_ne);}s._accom=true;} CATS=s.cats; return s; }
+function defaultState(){ return {home:"USD", month:nowMonth(), rates:Object.assign({},DEFAULT_RATES), liveRates:true, ratesUpdated:0, ratesError:false, cats:JSON.parse(JSON.stringify(DEFAULT_CATS)), trips:[], dark:false, income:{}, recurring:{}, planned:{}, billPaid:{}, expenses:[], goals:[], visas:[]}; }
+function normalize(s){ s=Object.assign(defaultState(), s||{}); if(!s.home) s.home="USD"; if(!s.month) s.month=nowMonth(); if(!s.rates||!s.rates.USD) s.rates=Object.assign({},DEFAULT_RATES); if(s.liveRates===undefined) s.liveRates=true; if(!s.cats||!s.cats.length)s.cats=JSON.parse(JSON.stringify(DEFAULT_CATS)); if(!s.trips)s.trips=[]; if(!s.visas)s.visas=[]; if(!s._accom){if(!s.cats.some(function(c){return c.name==="Hotels & accommodations";})){var _oi=s.cats.findIndex(function(c){return c.name==="Other";});var _ne={name:"Hotels & accommodations",icon:"🏨",group:"var"};if(_oi>=0)s.cats.splice(_oi,0,_ne);else s.cats.push(_ne);}s._accom=true;} CATS=s.cats; return s; }
 
 /* ---------- Persistence ---------- */
 function localLoad(){ try{ const r=JSON.parse(localStorage.getItem("borderless")); if(r) return r; }catch(e){} return defaultState(); }
@@ -286,11 +287,11 @@ function savedThisMonth(){return (S.goals||[]).reduce(function(a,g){return a+((g
 /* ---------- Nav ---------- */
 let tab="budget";
 function go(t){tab=t;document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));const f=document.getElementById("fab");f.style.display=(t==="summary")?"none":"flex";f.style.background=(t==="savings")?"#E0A21C":"var(--accent)";render();}
-function fabAction(){if(tab==="savings")openSheet("goal");else if(tab==="trips")openSheet("trip");else openSheet("add");}
+function fabAction(){if(tab==="savings")openSheet("goal");else if(tab==="trips")openSheet("trip");else if(tab==="visa")openSheet("visatracker",0);else openSheet("add");}
 
 /* ---------- Render ---------- */
 function twemojify(){try{if(window.twemoji){twemoji.parse(document.querySelector(".phone"),{folder:"svg",ext:".svg",base:"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/"});}}catch(e){}}
-function render(){applyTheme();CATS=S.cats||CATS;document.getElementById("monthLabel").textContent=monthLabel(S.month);document.getElementById("screenTitle").textContent={budget:"Budget",log:"Daily Log",savings:"Savings",trips:"Trips",summary:"Summary"}[tab];document.getElementById("homeChip").innerHTML="🏠 "+nameOf(S.home)+" ("+symOf(S.home)+")  ▾";document.getElementById("main").innerHTML=tab==="budget"?viewBudget():tab==="log"?viewLog():tab==="savings"?viewSavings():tab==="trips"?viewTrips():viewSummary();updateRateStatus();updateSubBanner();twemojify();}
+function render(){applyTheme();CATS=S.cats||CATS;document.getElementById("monthLabel").textContent=monthLabel(S.month);document.getElementById("screenTitle").textContent={budget:"Budget",log:"Daily Log",savings:"Savings",trips:"Trips",visa:"Visa & Stays",summary:"Summary"}[tab];document.getElementById("homeChip").innerHTML="🏠 "+nameOf(S.home)+" ("+symOf(S.home)+")  ▾";document.getElementById("main").innerHTML=tab==="budget"?viewBudget():tab==="log"?viewLog():tab==="savings"?viewSavings():tab==="trips"?viewTrips():tab==="visa"?viewVisa():viewSummary();updateRateStatus();updateSubBanner();twemojify();}
 function fixedRow(c){if(c.variable){const a=actualByCat()[c.name]||0;const exp=S.recurring[c.name]||0;const meta=exp>0?('typical '+fmt(exp)+' · varies monthly'):'amount varies each month';const btn=a>0?'<button class="chip paid" onclick="openSheet(\'add\',\''+c.name.replace(/'/g,"\\'")+'\')">'+fmt(a)+'</button>':'<button class="chip due" onclick="openSheet(\'add\',\''+c.name.replace(/'/g,"\\'")+'\')">Add</button>';return '<div class="row"><div style="flex:1"><div class="cat-name">'+c.icon+' '+c.name+'</div><div class="cat-meta">'+meta+'</div></div>'+btn+'</div>';}const paid=billPaidState(c.name);const amt=S.recurring[c.name]||0;return '<div class="row"><div style="flex:1"><div class="cat-name">'+c.icon+' '+c.name+'</div><div class="cat-meta">'+(amt>0?fmt(amt)+" / month":'<span style="color:#9aa0a6">tap edit to set</span>')+'</div></div><button class="chip '+(paid?'paid':'due')+'" onclick="toggleBill(\''+c.name.replace(/'/g,"\\'")+'\')">'+(paid?'✓ Paid':'Mark paid')+'</button></div>';}
 function varRow(c,act){const p=plannedFor(c.name),a=act[c.name]||0;const pct=p>0?Math.min(100,Math.round(a/p*100)):(a>0?100:0);const diff=p-a;const badge=p>0?'<span class="pill '+(diff>=0?'under':'over')+'">'+(diff>=0?'under':'over')+' '+fmt(Math.abs(diff))+'</span>':'';return '<div class="row"><div style="flex:1"><div class="cat-name">'+c.icon+' '+c.name+'</div><div class="cat-meta">'+fmt(a)+' of '+(p>0?fmt(p):'—')+' '+badge+'</div><div class="bar"><i class="'+(pct>=100&&diff<0?'hot':'')+'" style="width:'+pct+'%"></i></div></div><div class="amt" style="margin-left:12px;min-width:56px">'+(p>0?fmt(p):'<span style="color:#9aa0a6">set</span>')+'</div></div>';}
 function viewBudget(){const sav=savedThisMonth();const plannedSav=totalMonthlySavings();const left=income()-totalActual()-sav;const budgeted=sectionPlanned("fixed")+sectionPlanned("var")+plannedSav;const unalloc=income()-budgeted;const tag=income()?(unalloc>=0?" · "+fmt(unalloc)+" left to budget":" · "+fmt(-unalloc)+" over income"):"";const act=actualByCat();const paidCount=groupCats("fixed").filter(c=>c.variable?((act[c.name]||0)>0):billPaidState(c.name)).length;const fixedRows=groupCats("fixed").map(fixedRow).join("");const varRows=groupCats("var").map(c=>varRow(c,act)).join("");return '<div class="money-hero"><h3 style="color:#cfeaea;margin:0 0 4px">Money left this month</h3><div class="big">'+fmt(left)+'</div><div class="sub" style="color:#bfe3e3">'+fmt(totalActual())+' spent'+(sav?' · '+fmt(sav)+' to savings':'')+' of '+fmt(income())+' income</div><div class="sub" style="color:#bfe3e3;margin-top:3px">📋 Total budgeted '+fmt(budgeted)+tag+'</div></div><div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin-bottom:2px">Fixed bills</h3><button class="btn ghost sm" style="margin-top:0;width:auto;padding:5px 12px" onclick="openSheet(&#39;planned&#39;)">✎ Edit</button></div><div class="cat-meta" style="margin-bottom:10px">Auto-repeats every month · '+paidCount+'/'+groupCats("fixed").length+' paid</div>'+fixedRows+'<div class="row" style="border-top:2px solid var(--line);margin-top:4px"><b>Bills total</b><div style="text-align:right"><div class="amt">'+fmt(sectionActual("fixed"))+' paid</div><div class="cat-meta">of '+fmt(sectionPlanned("fixed"))+'</div></div></div></div><div class="card"><h3 style="margin-bottom:2px">Variable spending</h3><div class="cat-meta" style="margin-bottom:10px">Fills in from your Daily Log</div>'+varRows+'<div class="row" style="border-top:2px solid var(--line);margin-top:4px"><b>Variable subtotal</b><div style="text-align:right"><div class="amt">'+fmt(sectionActual("var"))+' spent</div><div class="cat-meta">planned '+fmt(sectionPlanned("var"))+'</div></div></div><button class="btn ghost" onclick="openSheet(\'planned\')">Edit bills, budgets &amp; income</button></div>'+(sav>0?'<div class="card" style="padding:12px 14px"><div class="row" style="border:none;padding:2px 0"><span>🎯 Savings this month</span><b class="amt">'+fmt(sav)+'</b></div><div class="cat-meta" style="margin-top:2px">Set aside before spending, already counted in Money left</div><button class="btn ghost" onclick="go(&#39;savings&#39;)" style="margin-top:10px">Manage savings goals</button></div>':'')+'';}
@@ -360,8 +361,148 @@ function annualCard(){
 function viewSummary(){const saved=savedThisMonth(),tot=totalActual()+saved,left=income()-tot;var inclSav=!!S.safeInclSavings;const safe=income()-sectionPlanned("fixed")-(inclSav?0:totalMonthlySavings());const act=actualByCat();const top=Object.entries(act).sort((a,b)=>b[1]-a[1]).slice(0,5);const maxv=top.length?top[0][1]:1;const bars=top.map(([n,v])=>'<div class="row" style="border:none;padding:8px 0"><div style="flex:1"><div class="cat-name" style="font-size:14px">'+iconFor(n)+' '+n+'</div><div class="bar"><i style="width:'+Math.round(v/maxv*100)+'%"></i></div></div><div class="amt" style="margin-left:12px">'+fmt(v)+'</div></div>').join("")||'<div class="empty">No spending yet.</div>';var convCodes=(S.convCcy&&S.convCcy.length)?S.convCcy:defaultConvCodes();const conv=convCodes.slice(0,3).map(function(code){return '<div><small>'+code+'</small><b>'+fmtIn(safe,code)+'</b></div>';}).join("");return '<div class="money-hero"><h3 style="color:#cfeaea;margin:0 0 4px">Safe to spend</h3><div class="big">'+fmt(safe)+'</div><div class="sub" style="color:#bfe3e3">left for variable spending after bills'+(inclSav?'':' &amp; savings')+'</div><div class="conv">'+conv+'</div></div>'+monthReviewCard()+'<div class="card"><h3>This month at a glance</h3><div class="row"><span>Income</span><b class="amt">'+fmt(income())+'</b></div><div class="row"><span>🔁 Fixed bills</span><b class="amt">'+fmt(sectionActual("fixed"))+' <span style="color:var(--gray);font-weight:400">/ '+fmt(sectionPlanned("fixed"))+'</span></b></div><div class="row"><span>🛒 Variable spending</span><b class="amt">'+fmt(sectionActual("var"))+'</b></div><div class="row"><span>🎯 Savings this month</span><b class="amt">'+fmt(saved)+'</b></div><div class="row"><span>Total spent</span><b class="amt">'+fmt(tot)+'</b></div><div class="row"><span>Money left</span><b class="amt" style="color:'+(left>=0?'var(--green)':'var(--accent)')+'">'+fmt(left)+'</b></div></div>'+donutSVG()+annualCard();}
 function prettyDate(d){const dt=new Date(d+"T00:00");return dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});}
 
+/* ---------- Visa & stay trackers ---------- */
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function dParse(s){var p=String(s).split("-");return new Date(+p[0],(+p[1])-1,+p[2]);}
+function dStr(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function dToday(){return dStr(new Date());}
+function dAdd(s,n){var dt=dParse(s);dt.setDate(dt.getDate()+n);return dStr(dt);}
+function dDiff(a,b){return Math.round((dParse(b).getTime()-dParse(a).getTime())/86400000);}
+function dPretty(s){if(!s)return "";var dt=dParse(s);return dt.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});}
+
+/* Days present inside the zone within the window ending on ref (inclusive).
+   Ongoing stays (no exit) are counted through extendTo, defaulting to today. */
+function schengenUsedAt(v,ref,extendTo){var win=v.window||180;var winStart=dAdd(ref,-(win-1));var used=0;(v.entries||[]).forEach(function(st){if(!st.in)return;var outD=st.out?st.out:(extendTo||dToday());var a=st.in>winStart?st.in:winStart;var b=outD<ref?outD:ref;if(dDiff(a,b)>=0)used+=dDiff(a,b)+1;});return used;}
+function schengenUsed(v){return schengenUsedAt(v,dToday(),dToday());}
+function schengenInside(v){return (v.entries||[]).some(function(s){return s.in&&!s.out&&dDiff(s.in,dToday())>=0;});}
+/* Last day you may remain if you stay continuously from today.
+   assumeEnterToday adds a fresh ongoing stay from today (for someone not yet inside). */
+function schengenLastDay(v,assumeEnterToday){var lim=v.limit||90;var entries=(v.entries||[]);if(assumeEnterToday)entries=entries.concat([{in:dToday(),out:null}]);var tmp={entries:entries,limit:lim,window:v.window||180};var last=null;for(var i=0;i<730;i++){var d=dAdd(dToday(),i);if(schengenUsedAt(tmp,d,d)<=lim)last=d;else break;}return last;}
+/* If maxed out and outside, the next day at least one day frees up. */
+function schengenNextFree(v){var lim=v.limit||90;if(schengenUsed(v)<lim)return null;for(var i=1;i<400;i++){var d=dAdd(dToday(),i);if(schengenUsedAt(v,d,dToday())<lim)return d;}return null;}
+
+function viewVisa(){
+  var vs=S.visas||[];
+  var cards=vs.map(visaCard).join("")||'<div class="card"><div class="empty"><div>🛂</div>No visa trackers yet.<br>Tap + to add your Schengen clock or any visa.</div></div>';
+  return '<div class="money-hero" style="background:linear-gradient(135deg,#7A5EA8,#4A3B75)"><h3 style="color:#e7ddf5;margin:0 0 4px">Visa &amp; stay tracker</h3><div class="sub" style="color:#d8ccf0">Know exactly how long you can stay, anywhere</div></div>'+cards+'<button class="btn ghost" onclick="openSheet(\'visatracker\',0)">+ Add a visa or stay</button>';
+}
+function visaCard(v){return v.type==="fixed"?fixedCard(v):schengenCard(v);}
+function schengenCard(v){
+  var lim=v.limit||90, win=v.window||180;
+  var used=schengenUsed(v);
+  var left=Math.max(0,lim-used);
+  var pct=Math.min(100,Math.round(used/lim*100));
+  var inside=schengenInside(v);
+  var barCls=used>=lim?'hot':(used>=lim*0.85?'gold':'');
+  var status='';
+  if(inside){
+    if(left<=0){status='<div class="cat-meta" style="color:var(--accent);font-weight:700;margin-top:8px">⚠ You are at your '+lim+'-day limit. Time to leave the zone.</div>';}
+    else{var last=schengenLastDay(v,false);var du=last?dDiff(dToday(),last):0;status='<div class="cat-meta" style="margin-top:8px">🧳 You are in the zone now. If you stay put, you must leave by <b>'+dPretty(last)+'</b> ('+du+' more day'+(du===1?'':'s')+').</div>';}
+  } else {
+    if(left<=0){var nf=schengenNextFree(v);status='<div class="cat-meta" style="color:var(--accent);margin-top:8px">No days left in the window. You can re-enter on <b>'+(nf?dPretty(nf):"soon")+'</b>.</div>';}
+    else{var lastp=schengenLastDay(v,true);var dup=lastp?dDiff(dToday(),lastp)+1:0;status='<div class="cat-meta" style="margin-top:8px">If you enter today, you can stay up to <b>'+dup+' day'+(dup===1?'':'s')+'</b> (through '+dPretty(lastp)+').</div>';}
+  }
+  var rows=(v.entries||[]).slice().sort(function(a,b){return (a.in||"").localeCompare(b.in||"");}).map(function(st){
+    var lab=dPretty(st.in)+' &rarr; '+(st.out?dPretty(st.out):'<span style="color:var(--teal);font-weight:700">still here</span>');
+    var dur=st.in?((st.out?dDiff(st.in,st.out):dDiff(st.in,dToday()))+1):0;
+    return '<div class="row" style="padding:8px 0"><div style="flex:1"><div style="font-size:14px">'+lab+'</div><div class="cat-meta">'+dur+' day'+(dur===1?'':'s')+'</div></div><button class="del" style="font-size:15px;padding:2px 6px" onclick="editStay('+v.id+','+st.id+')">&#9998;</button></div>';
+  }).join("")||'<div class="cat-meta" style="padding:6px 0">No trips logged yet. Add your first entry date below.</div>';
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b style="font-size:16px">🛂 '+esc(v.name)+'</b><div class="cat-meta">'+lim+' days in any '+win+' days'+(inside?' · in the zone now':'')+'</div></div><button class="btn ghost sm" style="margin-top:0" onclick="openSheet(\'visatracker\','+v.id+')">Edit</button></div>'
+   +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:12px"><div class="big" style="font-size:30px">'+left+' <span style="font-size:15px;font-weight:600;color:var(--gray)">days left</span></div><div class="cat-meta">'+used+' / '+lim+' used</div></div>'
+   +'<div class="bar" style="margin-top:8px"><i class="'+barCls+'" style="width:'+pct+'%"></i></div>'
+   +status
+   +'<div class="ghead" style="font-size:12px;margin-top:16px">Your entries &amp; exits</div>'+rows
+   +'<button class="btn ghost sm" style="margin-top:10px" onclick="addStay('+v.id+')">+ Add entry / exit</button></div>';
+}
+function fixedCard(v){
+  var start=v.start||dToday(), dur=v.duration||90;
+  var today=dToday();
+  var expiry=dAdd(start,dur-1);
+  var raw=dDiff(today,expiry);
+  var notStarted=dDiff(today,start)>0;
+  var expired=raw<0;
+  var remaining=raw+1;
+  var elapsed=Math.max(0,Math.min(dur,dDiff(start,today)+1));
+  var pct=Math.min(100,Math.round(elapsed/dur*100));
+  var barCls=expired?'hot':(remaining<=14?'gold':'');
+  var big,sub;
+  if(notStarted){var din=dDiff(today,start);big=din+' <span style="font-size:15px;font-weight:600;color:var(--gray)">day'+(din===1?'':'s')+' until it starts</span>';sub='Starts '+dPretty(start)+', valid through '+dPretty(expiry)+'.';pct=0;barCls='';}
+  else if(expired){var ago=Math.abs(raw);big='<span style="color:var(--accent)">Expired</span>';sub='Ended '+dPretty(expiry)+', '+ago+' day'+(ago===1?'':'s')+' ago.';}
+  else{big=remaining+' <span style="font-size:15px;font-weight:600;color:var(--gray)">day'+(remaining===1?'':'s')+' left</span>';sub='Expires '+dPretty(expiry)+(remaining<=14?' · time to plan your exit':'')+'.';}
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b style="font-size:16px">🛂 '+esc(v.name)+'</b><div class="cat-meta">'+dur+'-day stay from '+dPretty(start)+'</div></div><button class="btn ghost sm" style="margin-top:0" onclick="openSheet(\'visatracker\','+v.id+')">Edit</button></div>'
+   +'<div class="big" style="font-size:30px;margin-top:12px">'+big+'</div>'
+   +'<div class="bar" style="margin-top:8px"><i class="'+barCls+'" style="width:'+pct+'%"></i></div>'
+   +'<div class="cat-meta" style="margin-top:8px">'+sub+'</div></div>';
+}
+
+var _curVid=null;
+function addStay(vid){if(guard())return;_curVid=vid;openSheet("visastay",0);}
+function editStay(vid,sid){if(guard())return;_curVid=vid;openSheet("visastay",sid);}
+function sheetVisaTracker(id){
+  var v=(S.visas||[]).find(function(x){return x.id===id;});
+  var ed=!!v;
+  var type=v?v.type:'schengen';
+  var name=v?v.name:'';
+  var start=(v&&v.start)?v.start:dToday();
+  var dur=(v&&v.duration)?v.duration:90;
+  var durPreset=[90,180,365].indexOf(dur)>=0?String(dur):'custom';
+  return '<h2>'+(ed?'Edit tracker':'New visa / stay tracker')+'</h2>'
+   +'<label>What is it?</label><input id="v_name" value="'+esc(name)+'" placeholder="e.g. Schengen, Thailand visa">'
+   +'<label>Type of stay</label><select id="v_type" onchange="visaTypeChange()">'
+     +'<option value="schengen"'+(type==="schengen"?" selected":"")+'>Schengen area (90 days in any 180)</option>'
+     +'<option value="fixed"'+(type==="fixed"?" selected":"")+'>Fixed length stay (single visa)</option>'
+   +'</select>'
+   +'<div id="v_schengen" style="display:'+(type==="schengen"?"block":"none")+'"><div class="hint">The Schengen clock counts every day you are inside the zone. You may be inside for 90 days within any rolling 180 day window. Log your entry and exit dates and the app does the math for you.</div>'
+     +'<div class="grid2" style="margin-top:6px"><div><label>Days allowed</label><input id="v_limit" type="number" inputmode="numeric" value="'+((v&&v.limit)||90)+'"></div><div><label>Within (days)</label><input id="v_window" type="number" inputmode="numeric" value="'+((v&&v.window)||180)+'"></div></div><div class="hint">Leave these at 90 and 180 for the Schengen zone. A few other regions use the same rolling style with different numbers.</div></div>'
+   +'<div id="v_fixed" style="display:'+(type==="fixed"?"block":"none")+'">'
+     +'<label>Entry date</label><input id="v_start" type="date" value="'+start+'">'
+     +'<label>How long can you stay?</label><select id="v_durpreset" onchange="visaDurChange()"><option value="90"'+(durPreset==="90"?" selected":"")+'>90 days</option><option value="180"'+(durPreset==="180"?" selected":"")+'>180 days</option><option value="365"'+(durPreset==="365"?" selected":"")+'>1 year (365 days)</option><option value="custom"'+(durPreset==="custom"?" selected":"")+'>Custom</option></select>'
+     +'<div id="v_customwrap" style="display:'+(durPreset==="custom"?"block":"none")+'"><label>Custom length (days)</label><input id="v_dur" type="number" inputmode="numeric" value="'+dur+'"></div>'
+   +'</div>'
+   +'<button class="btn" onclick="saveVisa('+(id||0)+')">'+(ed?'Save':'Create tracker')+'</button>'
+   +(ed?'<button class="btn ghost" onclick="delVisa('+id+')" style="color:var(--accent)">Delete tracker</button>':'<button class="btn ghost" onclick="closeSheet()">Cancel</button>');
+}
+function visaTypeChange(){var t=document.getElementById("v_type").value;document.getElementById("v_schengen").style.display=t==="schengen"?"block":"none";document.getElementById("v_fixed").style.display=t==="fixed"?"block":"none";}
+function visaDurChange(){var p=document.getElementById("v_durpreset").value;document.getElementById("v_customwrap").style.display=p==="custom"?"block":"none";}
+function saveVisa(id){
+  var name=document.getElementById("v_name").value.trim()||"My visa";
+  var type=document.getElementById("v_type").value;
+  S.visas=S.visas||[];
+  var v=id?S.visas.find(function(x){return x.id===id;}):null;
+  if(!v){v={id:Date.now(),entries:[]};S.visas.push(v);}
+  v.name=name;v.type=type;
+  if(type==="schengen"){v.limit=parseInt(document.getElementById("v_limit").value,10)||90;v.window=parseInt(document.getElementById("v_window").value,10)||180;if(!v.entries)v.entries=[];}
+  else{v.start=document.getElementById("v_start").value||dToday();var p=document.getElementById("v_durpreset").value;v.duration=p==="custom"?(parseInt(document.getElementById("v_dur").value,10)||90):parseInt(p,10);}
+  save();closeSheet();render();
+}
+function delVisa(id){if(!confirm("Delete this tracker? This can't be undone."))return;S.visas=(S.visas||[]).filter(function(x){return x.id!==id;});save();closeSheet();render();}
+function sheetVisaStay(sid){
+  var v=(S.visas||[]).find(function(x){return x.id===_curVid;});
+  if(!v)return sheetSettings();
+  var st=sid?(v.entries||[]).find(function(x){return x.id===sid;}):null;
+  var ed=!!st;
+  var inD=st?st.in:dToday();
+  var outD=(st&&st.out)?st.out:'';
+  return '<h2>'+(ed?'Edit stay':'Add entry / exit')+'</h2><div class="hint">Enter the day you arrived in the zone and the day you left. Leave the exit blank if you are still inside. Both the entry day and the exit day count as days present.</div>'
+   +'<label>Entry date (arrived)</label><input id="s_in" type="date" value="'+inD+'">'
+   +'<label>Exit date (left), blank if still here</label><input id="s_out" type="date" value="'+outD+'">'
+   +'<button class="btn" onclick="saveStay('+(sid||0)+')">Save</button>'
+   +(ed?'<button class="btn ghost" onclick="delStay('+(sid||0)+')" style="color:var(--accent)">Delete this stay</button>':'<button class="btn ghost" onclick="closeSheet()">Cancel</button>');
+}
+function saveStay(sid){
+  var v=(S.visas||[]).find(function(x){return x.id===_curVid;});if(!v)return;
+  var inD=document.getElementById("s_in").value;var outD=document.getElementById("s_out").value;
+  if(!inD){document.getElementById("s_in").focus();return;}
+  if(outD&&dDiff(inD,outD)<0){alert("The exit date can't be before the entry date.");return;}
+  v.entries=v.entries||[];
+  if(sid){var st=v.entries.find(function(x){return x.id===sid;});if(st){st.in=inD;st.out=outD||null;}}
+  else{v.entries.push({id:Date.now(),in:inD,out:outD||null});}
+  save();closeSheet();render();
+}
+function delStay(sid){var v=(S.visas||[]).find(function(x){return x.id===_curVid;});if(!v)return;v.entries=(v.entries||[]).filter(function(x){return x.id!==sid;});save();closeSheet();render();}
+
 /* ---------- Sheets ---------- */
-function openSheet(kind,arg){if(locked()&&["add","editexp","planned","goal","bill","contrib","cats","catedit","trip"].indexOf(kind)>=0){kind="subscribe";arg=null;}const sh=document.getElementById("sheet");sh.innerHTML=kind==="add"?sheetAdd(arg):kind==="editexp"?sheetEditExp(arg):kind==="planned"?sheetPlanned():kind==="goal"?sheetGoal(arg):kind==="bill"?sheetBill(arg):kind==="cats"?sheetCats():kind==="catedit"?sheetCatEdit(arg):kind==="trip"?sheetTrip(arg):kind==="contrib"?sheetContribute(arg):kind==="welcome"?sheetWelcome():kind==="subscribe"?sheetSubscribe():sheetSettings();document.getElementById("scrim").classList.add("show");requestAnimationFrame(()=>sh.classList.add("show"));twemojify();}
+function openSheet(kind,arg){if(locked()&&["add","editexp","planned","goal","bill","contrib","cats","catedit","trip","visatracker","visastay"].indexOf(kind)>=0){kind="subscribe";arg=null;}const sh=document.getElementById("sheet");sh.innerHTML=kind==="add"?sheetAdd(arg):kind==="editexp"?sheetEditExp(arg):kind==="planned"?sheetPlanned():kind==="goal"?sheetGoal(arg):kind==="bill"?sheetBill(arg):kind==="cats"?sheetCats():kind==="catedit"?sheetCatEdit(arg):kind==="trip"?sheetTrip(arg):kind==="contrib"?sheetContribute(arg):kind==="welcome"?sheetWelcome():kind==="visatracker"?sheetVisaTracker(arg):kind==="visastay"?sheetVisaStay(arg):kind==="subscribe"?sheetSubscribe():sheetSettings();document.getElementById("scrim").classList.add("show");requestAnimationFrame(()=>sh.classList.add("show"));twemojify();}
 function closeSheet(){document.getElementById("sheet").classList.remove("show");document.getElementById("scrim").classList.remove("show");}
 function sheetAdd(preCat){return expenseForm(null,preCat);}
 function sheetEditExp(id){var e=S.expenses.find(function(x){return x.id===id;});return e?expenseForm(e,e.cat):expenseForm(null);}
